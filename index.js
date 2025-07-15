@@ -87,6 +87,7 @@ app.post('/signup', async (req, res) => {
   }
 });
 
+
 //Get user data
 app.get('/user/:email', async (req, res) => {
   const email = req.params.email;
@@ -313,7 +314,6 @@ app.delete('/selectedMedicines/remove/:id', async (req, res) => {
     res.status(400).json({ message: 'Invalid ID or failed to delete.' });
   }
 });
-
 
 
 
