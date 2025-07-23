@@ -170,6 +170,46 @@ app.get('/allMedicines',verifyToken, async (req, res) => {
   }
 });
 
+app.put('/allMedicines/categories/:id', async (req, res) => {
+  const { id } = req.params;
+  const { categoryName } = req.body;
+
+  try {
+    const result = await medicinesCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { category: categoryName } }
+    );
+
+    if (result.modifiedCount > 0) {
+      res.send({ message: 'Category updated successfully' });
+    } else {
+      res.status(404).send({ message: 'No category found to update' });
+    }
+  } catch (err) {
+    console.error('Error updating category:', err);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+});
+
+// DELETE a dummy medicine (used as category) by ID
+app.delete('/allMedicines/categories/:id', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const result = await medicinesCollection.deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount > 0) {
+      res.status(200).send({ message: 'Category deleted successfully' });
+    } else {
+      res.status(404).send({ message: 'Category not found' });
+    }
+  } catch (err) {
+    console.error('Error deleting category:', err);
+    res.status(500).send({ message: 'Internal server error' });
+  }
+});
+
+
 // ✅ GET full medicine data by ID — for selecting and saving with sellerEmail
 app.get('/allMedicines/details/:id', async (req, res) => {
   const id = req.params.id;
@@ -235,26 +275,29 @@ app.get('/discountedMedicines', async (req, res) => {
 // GET /category/:id
 
 
-app.get('/category/:id', async (req, res) => {
-  const id = req.params.id;
+
+
+app.get('/category/:category', async (req, res) => {
+  const category = req.params.category;
 
   if (!medicinesCollection) {
     return res.status(500).send({ message: "Database not initialized." });
   }
 
   try {
-    const medicine = await medicinesCollection.findOne({ _id: new ObjectId(id) });
+    const medicines = await medicinesCollection.find({ category }).toArray();
 
-    if (!medicine) {
-      return res.status(404).send({ message: "Medicine not found" });
+    if (!medicines.length) {
+      return res.status(404).send({ message: "No medicines found in this category" });
     }
 
-    res.status(200).json(medicine);
+    res.status(200).json(medicines);
   } catch (error) {
-    console.error("Error fetching medicine by ID:", error);
-    res.status(500).send({ message: "Failed to fetch medicine", error });
+    console.error("Error fetching medicines by category:", error);
+    res.status(500).send({ message: "Failed to fetch medicines", error });
   }
 });
+
 
 //selected medicine
 app.post('/selectedMedicines', async (req, res) => {
