@@ -8,6 +8,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
 const port = 3000;
 const { ObjectId } = require('mongodb');
+const verifyToken = require('./verifyToken');
 //const  = require('.');
 
 // app.use(cors({
@@ -140,7 +141,8 @@ app.post('/medicines', async (req, res) => {
 //Get seller data
 
 // Secured route
-app.get("/allMedicines/:email", async (req, res) => {
+// Secured route
+app.get("/allMedicines/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
 
   if (req.user.email !== email) {
