@@ -8,7 +8,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
 const port = 3000;
 const { ObjectId } = require('mongodb');
-const verifyToken = require('./verifyToken');
+//const  = require('.');
 
 // app.use(cors({
 //   origin: 'https://assignment-12-b71cb.web.app' 
@@ -140,7 +140,7 @@ app.post('/medicines', async (req, res) => {
 //Get seller data
 
 // Secured route
-app.get("/allMedicines/:email", verifyToken, async (req, res) => {
+app.get("/allMedicines/:email", async (req, res) => {
   const email = req.params.email;
 
   if (req.user.email !== email) {
@@ -155,7 +155,7 @@ app.get("/allMedicines/:email", verifyToken, async (req, res) => {
 
 
 //Get all medicine
-app.get('/allMedicines',verifyToken, async (req, res) => {
+app.get('/allMedicines',async (req, res) => {
   
   if (!medicinesCollection) {
     return res.status(500).send({ message: "Database not initialized." });
@@ -300,6 +300,23 @@ app.get('/category/:category', async (req, res) => {
 
 
 //selected medicine
+// app.post('/selectedMedicines', async (req, res) => {
+//   const { medicine, email } = req.body;
+
+//   if (!medicine || !email) {
+//     return res.status(400).json({ message: 'Medicine data and email are required' });
+//   }
+
+//   try {
+//     const { _id, ...medicineWithoutId } = medicine; // remove _id
+//     const result = await selectedMedicinesCollection.insertOne({ ...medicineWithoutId, email });
+//     res.status(201).json({ message: 'Medicine selected and saved successfully', id: result.insertedId });
+//   } catch (error) {
+//     console.error('Error saving selected medicine:', error);
+//     res.status(500).json({ message: 'Failed to save selected medicine', error });
+//   }
+// });
+
 app.post('/selectedMedicines', async (req, res) => {
   const { medicine, email } = req.body;
 
@@ -308,14 +325,37 @@ app.post('/selectedMedicines', async (req, res) => {
   }
 
   try {
-    const { _id, ...medicineWithoutId } = medicine; // remove _id
-    const result = await selectedMedicinesCollection.insertOne({ ...medicineWithoutId, email });
-    res.status(201).json({ message: 'Medicine selected and saved successfully', id: result.insertedId });
+    // Optional: Prevent duplicates
+    const existing = await selectedMedicinesCollection.findOne({
+      name: medicine.name,
+      email,
+    });
+
+    if (existing) {
+      return res.status(409).json({ message: 'Medicine already in cart' });
+    }
+
+    const { _id, ...medicineWithoutId } = medicine;
+
+    const result = await selectedMedicinesCollection.insertOne({
+      ...medicineWithoutId,
+      medicineId: _id, // track original _id
+      email,
+    });
+
+    res.status(201).json({
+      message: 'Medicine selected and saved successfully',
+      id: result.insertedId,
+    });
   } catch (error) {
     console.error('Error saving selected medicine:', error);
-    res.status(500).json({ message: 'Failed to save selected medicine', error });
+    res.status(500).json({
+      message: 'Failed to save selected medicine',
+      error: error.message,
+    });
   }
 });
+
 
 app.get('/selectedMedicines', async (req, res) => {
   try {
@@ -522,7 +562,7 @@ app.post('/advertisements', async (req, res) => {
   }
 });
 
-app.get('/advertisements',verifyToken, async (req, res) => {
+app.get('/advertisements', async (req, res) => {
   try {
     const advertisements = await advertisementsCollection.find().toArray();
     res.status(200).json(advertisements);
@@ -688,7 +728,7 @@ app.delete('/categories/:id', async (req, res) => {
   }
 });
 
-app.get('/admin/orders',verifyToken, async (req, res) => {
+app.get('/admin/orders', async (req, res) => {
   try {
     const orders = await ordersCollection.find().toArray();
     res.status(200).json(orders);
